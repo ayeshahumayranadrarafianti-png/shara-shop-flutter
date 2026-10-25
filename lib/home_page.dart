@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/product_model.dart';
 import 'detail_page.dart';
 import 'login_page.dart';
+import 'cart_page.dart'; // Impor halaman keranjang
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,7 +23,7 @@ class _HomePageState extends State<HomePage> {
       imagePath: 'assets/images/bella_square.jpg',
       stok: 150,
       warna: ['Hitam', 'Navy', 'Cream', 'Broken White', 'Putih', 'CandyRose', 'Taro', 'Mahogany', 'Beige', 'Khaki'],
-      motif: [], // <-- Tambahkan ini meskipun kosong
+      motif: [], 
       rating: 4.8,
       ulasan: ['Bahan adem banget!', 'Warnanya sesuai gambar, suka!'],
       listGambar: [
@@ -90,7 +91,7 @@ class _HomePageState extends State<HomePage> {
       harga: 25000,
       imagePath: 'assets/images/bergo_sport.jpg', 
       stok: 121,
-      warna: ['Silver', 'Dusty Pink', 'Abu Tua', 'Maroon', 'Matcha' 'Mocha', 'Cappucino', 'Cokelat', 'Putih', 'Hitam', 'Salem', 'Taro', 'Hazelnut', 'Dove', 'Espresso', 'Hijau Tua'], // Warna dikosongkan karena dia pakai Motif
+      warna: ['Silver', 'Dusty Pink', 'Abu Tua', 'Maroon', 'Matcha', 'Mocha', 'Cappucino', 'Cokelat', 'Putih', 'Hitam', 'Salem', 'Taro', 'Hazelnut', 'Dove', 'Espresso', 'Hijau Tua'],
       motif: [], 
       rating: 4.9,
       ulasan: ['Warna nya bagus', 'Bahan adem', 'Sangatt nyaman dipakee'],
@@ -158,6 +159,33 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
+  // Helper Widget untuk Status Pesanan di Profil
+  Widget _buildOrderStatusItem(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.pink, size: 28),
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+        ],
+      ),
+    );
+  }
+
+  void _showStatusInfo(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget tabBeranda = Scaffold(
@@ -167,12 +195,23 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.white,
         elevation: 1,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black87),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CartPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 1.00,
+          childAspectRatio: 1.28, // Ukuran diubah agar kartu & gambar lebih proporsional/tidak terlalu tinggi
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -189,7 +228,7 @@ class _HomePageState extends State<HomePage> {
             child: Card(
               elevation: 2,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              clipBehavior: Clip.antiAlias, // Huruf kecil (sudah diperbaiki)
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -198,7 +237,6 @@ class _HomePageState extends State<HomePage> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                          // Ganti errorBuilder jika gambar belum ada agar tidak error merah di layar HP
                           image: AssetImage(produk.imagePath),
                           fit: BoxFit.cover,
                         ),
@@ -279,6 +317,41 @@ class _HomePageState extends State<HomePage> {
           SliverList(
             delegate: SliverChildListDelegate([
               const SizedBox(height: 10),
+              
+              // FITUR PESANAN SAYA (Belum Bayar, Dikemas, Dikirim, Beri Penilaian)
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text('Pesanan Saya', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildOrderStatusItem(Icons.account_balance_wallet_outlined, 'Belum Bayar', () {
+                          _showStatusInfo(context, 'Belum Bayar', 'Tidak ada pesanan yang belum dibayar.');
+                        }),
+                        _buildOrderStatusItem(Icons.inventory_2_outlined, 'Dikemas', () {
+                          _showStatusInfo(context, 'Dikemas', 'Pesanan Anda sedang disiapkan oleh penjual.');
+                        }),
+                        _buildOrderStatusItem(Icons.local_shipping_outlined, 'Dikirim', () {
+                          _showStatusInfo(context, 'Dikirim', 'Pesanan sedang dalam perjalanan.');
+                        }),
+                        _buildOrderStatusItem(Icons.star_rate_outlined, 'Beri Penilaian', () {
+                          _showStatusInfo(context, 'Beri Penilaian', 'Berikan ulasan dan rating produk Anda di sini.');
+                        }),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
               Container(
                 color: Colors.white,
                 child: Column(
