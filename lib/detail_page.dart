@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'models/product_model.dart';
-import 'checkout_page.dart';
 
 class DetailPage extends StatefulWidget {
   final ProductModel produk;
@@ -12,138 +11,201 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
-  String? _warnaPilihan;
-  String? _motifPilihan;
+  int quantity = 1;
+  String? selectedWarna;
+  late String currentImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    currentImagePath = widget.produk.imagePath;
+    final listWarna = widget.produk.warna ?? [];
+    final listMotif = widget.produk.motif ?? [];
+    if (listWarna.isNotEmpty) {
+      selectedWarna = listWarna[0];
+    } else if (listMotif.isNotEmpty) {
+      selectedWarna = listMotif[0];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Cek apakah produk memiliki variasi WARNA (Wajib menggunakan .isNotEmpty)
-    bool adaWarna = widget.produk.warna.isNotEmpty;
-
-    // 2. Cek apakah produk memiliki variasi MOTIF
-    bool adaMotif = widget.produk.motif != null && widget.produk.motif!.isNotEmpty;
+    final listWarna = widget.produk.warna ?? [];
+    final listMotif = widget.produk.motif ?? [];
+    bool hasWarna = listWarna.isNotEmpty;
+    bool hasMotif = listMotif.isNotEmpty;
+    List<String> pilihanList = hasWarna ? listWarna : listMotif;
+    final listGambar = widget.produk.listGambar ?? [];
+    final listUlasan = widget.produk.ulasan ?? [];
 
     return Scaffold(
+      backgroundColor: Colors.grey[150],
       appBar: AppBar(
-        title: const Text('Detail Produk'),
+        title: const Text('Detail Produk', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.pink,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar Produk
-            Image.asset(
-              widget.produk.imagePath,
+            // Gambar Utama Produk
+            Container(
+              height: 350,
               width: double.infinity,
-              height: 300,
-              fit: BoxFit.cover,
+              color: Colors.white,
+              child: Image.asset(
+                currentImagePath,
+                fit: BoxFit.cover,
+              ),
             ),
-            Padding(
+            const SizedBox(height: 8),
+
+            // Informasi Nama & Harga
+            Container(
+              color: Colors.white,
               padding: const EdgeInsets.all(16.0),
+              width: double.infinity,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.produk.nama,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Rp ${widget.produk.harga}',
-                    style: const TextStyle(fontSize: 20, color: Colors.pink, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 22, color: Colors.pink, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // ================= KOMPONEN WARNA =================
-                  // Hanya muncul JIKA list warna ada isinya (.isNotEmpty)
-                  if (adaWarna) ...[
-                    const Text('Pilih Warna:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 10,
-                      children: widget.produk.warna.map((warna) {
-                        return ChoiceChip(
-                          label: Text(warna),
-                          selected: _warnaPilihan == warna,
-                          selectedColor: Colors.pink[100],
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _warnaPilihan = selected ? warna : null;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // ================= KOMPONEN MOTIF =================
-                  // Hanya muncul JIKA list motif tidak null dan tidak kosong
-                  if (adaMotif) ...[
-                    const Text('Pilih Motif:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 8,
-                      children: widget.produk.motif!.map((motif) {
-                        return ChoiceChip(
-                          label: Text(motif),
-                          selected: _motifPilihan == motif,
-                          selectedColor: Colors.pink[100],
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _motifPilihan = selected ? motif : null;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                      const SizedBox(width: 4),
+                      Text('${widget.produk.rating}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 16),
+                      Text('Stok: ${widget.produk.stok}', style: const TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+
+            // Bagian Pilihan Warna / Motif dengan Gambar Variasi
+            if (pilihanList.isNotEmpty)
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(16.0),
+                width: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasWarna ? 'Pilih Warna:' : 'Pilih Motif:',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: List.generate(pilihanList.length, (index) {
+                        String pilihan = pilihanList[index];
+                        bool isSelected = selectedWarna == pilihan;
+
+                        // Mengambil gambar variasi secara aman
+                        String gambarVariasi = (listGambar.length > index)
+                            ? listGambar[index]
+                            : widget.produk.imagePath;
+
+                        return ChoiceChip(
+                          selected: isSelected,
+                          selectedColor: Colors.pink.shade100,
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: isSelected ? Colors.pink : Colors.grey.shade300),
+                          ),
+                          avatar: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.asset(
+                              gambarVariasi,
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          label: Text(
+                            pilihan,
+                            style: TextStyle(
+                              color: isSelected ? Colors.pink.shade900 : Colors.black87,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          onSelected: (bool selected) {
+                            setState(() {
+                              selectedWarna = pilihan;
+                              currentImagePath = gambarVariasi;
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
+
+            // Ulasan Pengguna
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16.0),
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Ulasan Pembeli', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  listUlasan.isNotEmpty
+                      ? Column(
+                          children: listUlasan.map((ulasan) {
+                            return ListTile(
+                              leading: const Icon(Icons.person_outline, color: Colors.pink),
+                              title: Text(ulasan),
+                              dense: true,
+                            );
+                          }).toList(),
+                        )
+                      : const Text('Belum ada ulasan untuk produk ini.', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 80),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.pink,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          onPressed: () {
-            if (adaWarna && _warnaPilihan == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Silakan pilih warna terlebih dahulu!')),
-              );
-              return;
-            }
-            if (adaMotif && _motifPilihan == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Silakan pilih motif terlebih dahulu!')),
-              );
-              return;
-            }
-
-            String variasiTerpilih = '';
-            if (adaWarna && _warnaPilihan != null) variasiTerpilih += 'Warna: $_warnaPilihan ';
-            if (adaMotif && _motifPilihan != null) variasiTerpilih += 'Motif: $_motifPilihan';
-            if (variasiTerpilih.isEmpty) variasiTerpilih = 'Standar';
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CheckoutPage(
-                  produk: widget.produk,
-                  variasiPilihan: variasiTerpilih.trim(),
+      bottomSheet: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pink,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Berhasil memesan ${widget.produk.nama} (${selectedWarna ?? 'Default'})!')),
+                  );
+                },
+                child: const Text('Beli Sekarang', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
-            );
-          },
-          child: const Text('Beli Sekarang', style: TextStyle(fontSize: 16, color: Colors.white)),
+            ),
+          ],
         ),
       ),
     );
